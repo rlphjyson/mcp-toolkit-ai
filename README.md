@@ -4,13 +4,9 @@ Five [MCP](https://modelcontextprotocol.io) servers — semantic code search, sa
 a GitHub Issues bridge, local dev-environment awareness, and a personal Markdown knowledge
 base — plus one generic CLI client that speaks to all five over the real protocol.
 
-Project 3 of a 2026 portfolio series — see [project 1, docuchat-ai](https://github.com/rlphjyson/docuchat-ai)
-(RAG chat) and [project 2, prreview-ai](https://github.com/rlphjyson/prreview-ai) (AI PR review).
-
 ## What makes this one different
 
-Projects 1 and 2 are fullstack web apps. This one is deliberately protocol-only — no frontend,
-no dashboard. Each server is a small, independently-installable Python package exposing MCP
+Each server is a small, independently-installable Python package exposing MCP
 tools/resources over stdio; the CLI is a thin, generic client, not a bespoke UI per server. That
 keeps every server's scope tight (no UI layer to also build five times) and demonstrates a
 different kind of integration surface than the rest of the series: the thing consuming these
