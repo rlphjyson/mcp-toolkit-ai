@@ -23,6 +23,29 @@ def engine_fixture(tmp_path, monkeypatch):
     db.get_engine.cache_clear()
 
 
+def test_sqlite_file_path_preserves_a_posix_absolute_path():
+    # Regression test: this exact case (a 4-slash sqlite URL wrapping an absolute POSIX path)
+    # passed on Windows locally but failed in Linux CI -- lstrip("/") used to strip both leading
+    # slashes, turning "/tmp/foo/bar.db" into the relative path "tmp/foo/bar.db".
+    assert db._sqlite_file_path("sqlite:////tmp/foo/bar.db") == "/tmp/foo/bar.db"
+
+
+def test_sqlite_file_path_preserves_a_relative_path():
+    assert db._sqlite_file_path("sqlite:///./data/sample.db") == "./data/sample.db"
+
+
+def test_sqlite_file_path_preserves_a_windows_absolute_path():
+    assert db._sqlite_file_path(r"sqlite:///C:\Users\test\db.db") == r"C:\Users\test\db.db"
+
+
+def test_sqlite_file_path_returns_none_for_in_memory_db():
+    assert db._sqlite_file_path("sqlite:///:memory:") is None
+
+
+def test_sqlite_file_path_returns_none_for_non_sqlite_url():
+    assert db._sqlite_file_path("postgresql://user:pass@host/db") is None
+
+
 def test_get_engine_creates_missing_parent_directory(tmp_path, monkeypatch):
     # Regression test: SQLite does not create a database file's parent directory itself, so a
     # fresh checkout using the default DATABASE_URL (sqlite:///./data/sample.db) would fail with

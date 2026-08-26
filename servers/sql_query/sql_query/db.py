@@ -4,7 +4,6 @@ from concurrent.futures import TimeoutError as FutureTimeoutError
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from urllib.parse import urlparse
 
 import sqlalchemy as sa
 
@@ -32,10 +31,22 @@ class QueryResult:
     truncated: bool
 
 
+def _sqlite_file_path(database_url: str) -> str | None:
+    # Deliberately not urlparse+lstrip("/"): SQLAlchemy's own convention is that everything
+    # after the literal "sqlite:///" prefix IS the filesystem path verbatim -- "sqlite:///rel/db"
+    # (3 slashes) is relative, "sqlite:////abs/db" (4 slashes) is absolute, distinguished only by
+    # whether that remainder itself starts with "/". lstrip("/") strips *all* leading slashes,
+    # which silently turns an absolute POSIX path into a relative one (caught the hard way: this
+    # passed on Windows, where db paths don't start with "/", and failed in Linux CI).
+    if ":memory:" in database_url or not database_url.startswith("sqlite:///"):
+        return None
+    return database_url[len("sqlite:///") :]
+
+
 def _ensure_sqlite_dir_exists(database_url: str) -> None:
-    if not database_url.startswith("sqlite") or ":memory:" in database_url:
+    db_path = _sqlite_file_path(database_url)
+    if db_path is None:
         return
-    db_path = urlparse(database_url).path.lstrip("/")
     parent = Path(db_path).parent
     if str(parent) not in ("", "."):
         os.makedirs(parent, exist_ok=True)
