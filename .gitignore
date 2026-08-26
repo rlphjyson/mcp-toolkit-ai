@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+**/data/
+**/vault/
+**/logs/
+*.db
+
+# Env
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db

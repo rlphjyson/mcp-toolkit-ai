@@ -1,0 +1,39 @@
+# Registry of the toolkit's MCP servers, read by the CLI client (cli/mcp_toolkit).
+# `cwd` is resolved relative to this file's own directory (the repo root), so the CLI works
+# the same way regardless of which directory it's invoked from.
+# `command = "python"` is special-cased by the CLI to mean "whichever interpreter the CLI
+# itself is running under" -- the shared dev venv that has every server's dependencies
+# installed, rather than whatever bare `python` happens to resolve to on PATH.
+
+[servers.codebase]
+description = "Semantic code search, file history, and related PRs over a git repo"
+command = "python"
+args = ["-m", "codebase_intelligence.server"]
+cwd = "servers/codebase_intelligence"
+
+[servers.sql]
+description = "Safe, read-only SQL querying with schema introspection"
+command = "python"
+args = ["-m", "sql_query.server"]
+cwd = "servers/sql_query"
+
+[servers.issues]
+description = "GitHub Issues bridge -- list, search, create, comment"
+command = "python"
+args = ["-m", "issue_tracker.server"]
+cwd = "servers/issue_tracker"
+
+[servers.issues.env]
+GITHUB_TOKEN = "${GITHUB_TOKEN}"
+
+[servers.devenv]
+description = "Local dev environment awareness -- processes, git log, tests, logs"
+command = "python"
+args = ["-m", "dev_environment.server"]
+cwd = "servers/dev_environment"
+
+[servers.kb]
+description = "Personal knowledge base over local Markdown notes"
+command = "python"
+args = ["-m", "knowledge_base.server"]
+cwd = "servers/knowledge_base"

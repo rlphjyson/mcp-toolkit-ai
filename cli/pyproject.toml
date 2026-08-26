@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mcp-toolkit-cli"
+version = "0.1.0"
+description = "Generic CLI client for the mcp-toolkit-ai servers"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=2.1",
+    "typer>=0.15",
+    "rich>=13.9",
+]
+
+[project.scripts]
+mcp-toolkit = "mcp_toolkit.main:app"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.7",
+    "mypy>=1.13",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["mcp_toolkit"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
