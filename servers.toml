@@ -1,4 +1,6 @@
-# Registry of the toolkit's MCP servers, read by the CLI client (cli/mcp_toolkit).
+# Registry of the toolkit's MCP servers, read by the CLI client (cli/mcp_toolkit) and by the
+# gateway (gateway/mcp_gateway), which connects to every entry here except its own "gateway" one
+# and re-exposes them all behind a single MCP endpoint under namespaced tool names.
 # `cwd` is resolved relative to this file's own directory (the repo root), so the CLI works
 # the same way regardless of which directory it's invoked from.
 # `command = "python"` is special-cased by the CLI to mean "whichever interpreter the CLI
@@ -118,3 +120,11 @@ description = "Scans a Flutter project for legacy patterns and applies well-defi
 command = "python"
 args = ["-m", "flutter_code_migration.server"]
 cwd = "servers/flutter_code_migration"
+
+# --- Gateway (aggregates every server above behind one MCP endpoint) ---
+
+[servers.gateway]
+description = "Aggregates every server above behind one MCP endpoint, tools namespaced as <short_name>__<tool>"
+command = "python"
+args = ["-m", "mcp_gateway.server"]
+cwd = "gateway"

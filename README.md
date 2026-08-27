@@ -11,6 +11,33 @@ The twelve Flutter servers also live standalone at
 [flutter-mcp-toolkit](https://github.com/rlphjyson/flutter-mcp-toolkit) for anyone who only
 wants the Flutter/mobile set.
 
+A **gateway** (`gateway/mcp_gateway`) sits in front of all seventeen: it's itself an MCP server,
+but instead of implementing tools directly, it connects to every server in `servers.toml` as an
+MCP *client* and re-exposes their combined tools behind one MCP endpoint. Point an AI agent at
+the gateway and it gets all seventeen servers' tools through a single connection instead of
+seventeen separate ones.
+
+```
+AI Agent
+   │
+MCP Gateway  (gateway/mcp_gateway)
+   │
+   ├── codebase (semantic code search)
+   ├── sql (safe SQL querying)
+   ├── issues (GitHub Issues)
+   ├── devenv / kb (local dev + notes)
+   └── flutterintel, flutterui, crashlog, crashlytics, archguard, flutterdeps,
+       mobilesec, apicontract, flutestcov, flutperf, mobilecicd, flumigrate
+       (the twelve Flutter/mobile servers)
+```
+
+Each backend's tools are exposed under a namespaced name, `<short_name>__<tool_name>` (e.g.
+`flutterintel__index_project`), so the same tool name from two different servers never collides.
+A backend that fails to start is skipped with a warning on stderr rather than taking down the
+whole gateway. Run it directly with `python -m mcp_gateway.server` (from `gateway/`, or with
+`MCP_GATEWAY_CONFIG_PATH` pointing at a specific `servers.toml`), or reach it through the CLI
+like any other registered server: `mcp-toolkit list-tools gateway`.
+
 ## What makes this one different
 
 Each server is a small, independently-installable Python package exposing MCP
@@ -70,7 +97,11 @@ shape a real standalone MCP server would take, not one monolith with everything 
 
 ```mermaid
 flowchart LR
+    Agent[AI agent]
     CLI[mcp-toolkit CLI]
+    GW[MCP Gateway\ngateway/mcp_gateway]
+
+    Agent -- stdio/JSON-RPC, one connection --> GW
 
     subgraph Servers [MCP servers, spawned over stdio]
         CI[codebase_intelligence]
@@ -103,23 +134,25 @@ flowchart LR
     PubDev[pub.dev API]
     OpenAPI[(OpenAPI spec)]
 
-    CLI -- stdio/JSON-RPC --> CI
-    CLI -- stdio/JSON-RPC --> SQL
-    CLI -- stdio/JSON-RPC --> IT
-    CLI -- stdio/JSON-RPC --> DE
-    CLI -- stdio/JSON-RPC --> KB
-    CLI -- stdio/JSON-RPC --> FPI
-    CLI -- stdio/JSON-RPC --> FUT
-    CLI -- stdio/JSON-RPC --> FCA
-    CLI -- stdio/JSON-RPC --> FBC
-    CLI -- stdio/JSON-RPC --> FAG
-    CLI -- stdio/JSON-RPC --> FDM
-    CLI -- stdio/JSON-RPC --> MS
-    CLI -- stdio/JSON-RPC --> AC
-    CLI -- stdio/JSON-RPC --> FTC
-    CLI -- stdio/JSON-RPC --> FP
-    CLI -- stdio/JSON-RPC --> MC
-    CLI -- stdio/JSON-RPC --> FCM
+    CLI -- stdio/JSON-RPC, pick one server --> CI
+    CLI -- stdio/JSON-RPC, pick one server --> SQL
+    CLI -- stdio/JSON-RPC, pick one server --> IT
+    CLI -- stdio/JSON-RPC, pick one server --> DE
+    CLI -- stdio/JSON-RPC, pick one server --> KB
+    CLI -- stdio/JSON-RPC, pick one server --> FPI
+    CLI -- stdio/JSON-RPC, pick one server --> FUT
+    CLI -- stdio/JSON-RPC, pick one server --> FCA
+    CLI -- stdio/JSON-RPC, pick one server --> FBC
+    CLI -- stdio/JSON-RPC, pick one server --> FAG
+    CLI -- stdio/JSON-RPC, pick one server --> FDM
+    CLI -- stdio/JSON-RPC, pick one server --> MS
+    CLI -- stdio/JSON-RPC, pick one server --> AC
+    CLI -- stdio/JSON-RPC, pick one server --> FTC
+    CLI -- stdio/JSON-RPC, pick one server --> FP
+    CLI -- stdio/JSON-RPC, pick one server --> MC
+    CLI -- stdio/JSON-RPC, pick one server --> FCM
+    CLI -- stdio/JSON-RPC --> GW
+    GW -- stdio/JSON-RPC, all 17 as one --> Servers
 
     CI --> Chroma
     CI -- git log --> FS
@@ -189,6 +222,7 @@ pip install -e "servers/flutter_performance[dev]"
 pip install -e "servers/mobile_cicd[dev]"
 pip install -e "servers/flutter_code_migration[dev]"
 pip install -e "cli[dev]"
+pip install -e "gateway[dev]"
 ```
 
 `servers.toml` maps short names to launch commands; `command = "python"` means "whichever
@@ -270,10 +304,14 @@ assuming a variable in your shell will silently show up inside a spawned server.
 
 ```bash
 cd servers/codebase_intelligence && ruff check . && mypy codebase_intelligence && pytest -q
-# ...same for every other server (see servers.toml for the full list) and the cli
+# ...same for every other server (see servers.toml for the full list), the cli, and the gateway
 ```
 
-CI runs this matrix (ruff + mypy + pytest) across all seventeen servers and the CLI on every push.
+CI runs this matrix (ruff + mypy + pytest) across all seventeen servers, the CLI, and the gateway
+on every push. The gateway's own tests include a true end-to-end run that spawns the real
+gateway process, which in turn spawns two real backend servers -- confirming the whole chain
+(agent → gateway → backend) actually works over the real protocol, not just each hop in
+isolation.
 
 ## License
 

@@ -49,6 +49,8 @@ jobs:
             package: flutter_code_migration
           - dir: cli
             package: mcp_toolkit
+          - dir: gateway
+            package: mcp_gateway
     defaults:
       run:
         working-directory: ${{ matrix.dir }}
