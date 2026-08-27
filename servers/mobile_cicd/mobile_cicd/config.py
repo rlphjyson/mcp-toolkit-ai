@@ -1,0 +1,5 @@
+import os
+
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
+
+DEFAULT_FASTLANE_TIMEOUT_SECONDS = float(os.environ.get("MOBILE_CICD_FASTLANE_TIMEOUT_SECONDS", "600"))

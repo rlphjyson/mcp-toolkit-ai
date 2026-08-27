@@ -1,8 +1,15 @@
 # mcp-toolkit-ai
 
-Five [MCP](https://modelcontextprotocol.io) servers — semantic code search, safe SQL querying,
-a GitHub Issues bridge, local dev-environment awareness, and a personal Markdown knowledge
-base — plus one generic CLI client that speaks to all five over the real protocol.
+Seventeen [MCP](https://modelcontextprotocol.io) servers — five general-purpose (semantic code
+search, safe SQL querying, a GitHub Issues bridge, local dev-environment awareness, a personal
+Markdown knowledge base) and twelve Flutter/mobile-focused (project intelligence, UI testing,
+crash analysis, Crashlytics, architecture review, dependency management, mobile security, API
+contract checking, test coverage, performance analysis, CI/CD, and code migration) — plus one
+generic CLI client that speaks to all of them over the real protocol.
+
+The twelve Flutter servers also live standalone at
+[flutter-mcp-toolkit](https://github.com/rlphjyson/flutter-mcp-toolkit) for anyone who only
+wants the Flutter/mobile set.
 
 ## What makes this one different
 
@@ -23,9 +30,41 @@ browser.
 | **Dev Environment** | `dev_environment` | Local process listing, recent git commits, running a repo's test command, tailing a log file (allowlisted directory only) |
 | **Knowledge Base** | `knowledge_base` | Search/create Markdown notes in a local vault, with `[[wikilink]]`-based backlinks |
 
+### Flutter / mobile servers
+
+| Server | Package | What it does |
+| --- | --- | --- |
+| **Flutter Project Intelligence** | `flutter_project_intelligence` | Indexes a Flutter project's widgets, BLoC/Cubit/Riverpod state, GoRouter/named routes, repositories/use cases, API clients, and its own import graph |
+| **Flutter UI Testing** | `flutter_ui_testing` | Lists connected devices, launches an app, taps/enters text/scrolls, takes screenshots, and runs `integration_test` files |
+| **Flutter Crash & Log Analyzer** | `flutter_crash_analyzer` | Parses Flutter/Dart stack traces, tags likely root causes, and attaches `git blame` for the offending line |
+| **Firebase / Crashlytics** | `firebase_crashlytics` | Queries Crashlytics' BigQuery export for top issues, trends, and affected versions |
+| **Flutter Architecture Guardian** | `flutter_architecture_guardian` | Flags Clean Architecture / feature-first layering violations via the project's import graph |
+| **Flutter Dependency Manager** | `flutter_dependency_manager` | Checks `pubspec.yaml` dependencies against pub.dev for outdated/discontinued packages, plus unused-import detection |
+| **Mobile Security** | `mobile_security` | Static scan for hardcoded secrets, insecure `http://` endpoints, unsafe local storage, and risky Android/iOS config |
+| **API Contract** | `api_contract` | Compares an OpenAPI spec's schemas/endpoints against Flutter Dart models and API client call sites |
+| **Flutter Test Coverage** | `flutter_test_coverage` | Parses `coverage/lcov.info` for low-coverage files, uncovered lines, and source files with no matching test |
+| **Flutter Performance** | `flutter_performance` | Analyzes DevTools timeline exports for jank/frame times and `--analyze-size` reports for app-size bloat |
+| **Mobile CI/CD** | `mobile_cicd` | Inspects/triggers GitHub Actions runs and runs local Fastlane lanes (the practical path to TestFlight/Play/Firebase App Distribution) |
+| **Flutter Code Migration** | `flutter_code_migration` | Scans for legacy patterns (deprecated widgets, Navigator, BLoC) and mechanically applies the subset of renames that are safe to automate |
+
 Each server ships its own `pyproject.toml` and dependency set (only `codebase_intelligence`
 needs `sentence-transformers`/`chromadb`, only `sql_query` needs `sqlalchemy`, etc.) — the same
 shape a real standalone MCP server would take, not one monolith with everything installed.
+
+### A note on scope for three of the Flutter servers
+
+- **Firebase / Crashlytics** has no public per-crash REST API. The real-world way to query it
+  programmatically is via its BigQuery export, so that's what this server does — no
+  `google-cloud-bigquery` SDK dependency, just `httpx` against BigQuery's REST API with a bearer
+  token from `FIREBASE_BIGQUERY_ACCESS_TOKEN` (e.g. `gcloud auth print-access-token`).
+- **Mobile CI/CD** scopes to GitHub Actions (reusing this repo's `GITHUB_TOKEN` pattern) and
+  locally-installed Fastlane, rather than reimplementing the App Store Connect and Google Play
+  Developer APIs directly — Fastlane is itself the standard way a Flutter project already talks
+  to TestFlight, Play Console, and Firebase App Distribution.
+- **Flutter Code Migration** only auto-applies renames that are genuine 1:1 mechanical
+  transformations (e.g. `RaisedButton` → `ElevatedButton`). Navigator → GoRouter and BLoC →
+  Riverpod migrations are detection-and-guidance only — those need semantic understanding a
+  regex can't safely provide, so `apply_transformation` refuses to touch them.
 
 ## Architecture
 
@@ -39,6 +78,18 @@ flowchart LR
         IT[issue_tracker]
         DE[dev_environment]
         KB[knowledge_base]
+        FPI[flutter_project_intelligence]
+        FUT[flutter_ui_testing]
+        FCA[flutter_crash_analyzer]
+        FBC[firebase_crashlytics]
+        FAG[flutter_architecture_guardian]
+        FDM[flutter_dependency_manager]
+        MS[mobile_security]
+        AC[api_contract]
+        FTC[flutter_test_coverage]
+        FP[flutter_performance]
+        MC[mobile_cicd]
+        FCM[flutter_code_migration]
     end
 
     Chroma[(Chroma index)]
@@ -46,12 +97,29 @@ flowchart LR
     GH[GitHub API]
     FS[(local filesystem\nprocesses, git, logs)]
     Vault[(Markdown vault)]
+    FlutterProj[(Flutter project tree\npubspec.yaml, lib/, coverage/)]
+    Device[(Device / emulator\nflutter, adb, xcrun)]
+    BQ[(Crashlytics BigQuery export)]
+    PubDev[pub.dev API]
+    OpenAPI[(OpenAPI spec)]
 
     CLI -- stdio/JSON-RPC --> CI
     CLI -- stdio/JSON-RPC --> SQL
     CLI -- stdio/JSON-RPC --> IT
     CLI -- stdio/JSON-RPC --> DE
     CLI -- stdio/JSON-RPC --> KB
+    CLI -- stdio/JSON-RPC --> FPI
+    CLI -- stdio/JSON-RPC --> FUT
+    CLI -- stdio/JSON-RPC --> FCA
+    CLI -- stdio/JSON-RPC --> FBC
+    CLI -- stdio/JSON-RPC --> FAG
+    CLI -- stdio/JSON-RPC --> FDM
+    CLI -- stdio/JSON-RPC --> MS
+    CLI -- stdio/JSON-RPC --> AC
+    CLI -- stdio/JSON-RPC --> FTC
+    CLI -- stdio/JSON-RPC --> FP
+    CLI -- stdio/JSON-RPC --> MC
+    CLI -- stdio/JSON-RPC --> FCM
 
     CI --> Chroma
     CI -- git log --> FS
@@ -60,6 +128,20 @@ flowchart LR
     IT --> GH
     DE --> FS
     KB --> Vault
+    FPI --> FlutterProj
+    FUT --> Device
+    FCA --> FS
+    FBC --> BQ
+    FAG --> FlutterProj
+    FDM --> PubDev
+    MS --> FlutterProj
+    AC --> OpenAPI
+    AC --> FlutterProj
+    FTC --> FlutterProj
+    FP --> FlutterProj
+    MC --> GH
+    MC -- fastlane --> Device
+    FCM --> FlutterProj
 ```
 
 The CLI reads [`servers.toml`](servers.toml) at the repo root — a registry of short names to
@@ -72,9 +154,13 @@ same protocol.
 - **MCP Python SDK** `mcp>=2.1` (`MCPServer`, not the older `FastMCP` name)
 - **sentence-transformers + Chroma** for local, no-API-key semantic search
 - **SQLAlchemy + sqlparse** for the SQL server's schema access and query-safety validation
-- **httpx** for the GitHub-backed servers
+- **httpx** for the GitHub-, pub.dev-, and BigQuery-backed servers
 - **psutil** for process listing
+- **PyYAML** for `pubspec.yaml`/OpenAPI parsing
 - **Typer + Rich** for the CLI
+- Everything else Flutter-specific (Dart source scanning, lcov parsing, DevTools timeline
+  analysis, `AndroidManifest.xml`/`Info.plist` parsing) is regex/stdlib-based by design — no
+  Flutter SDK or Dart analyzer is required to run these servers' tests
 
 ## Getting started
 
@@ -90,13 +176,26 @@ pip install -e "servers/sql_query[dev]"
 pip install -e "servers/issue_tracker[dev]"
 pip install -e "servers/dev_environment[dev]"
 pip install -e "servers/knowledge_base[dev]"
+pip install -e "servers/flutter_project_intelligence[dev]"
+pip install -e "servers/flutter_ui_testing[dev]"
+pip install -e "servers/flutter_crash_analyzer[dev]"
+pip install -e "servers/firebase_crashlytics[dev]"
+pip install -e "servers/flutter_architecture_guardian[dev]"
+pip install -e "servers/flutter_dependency_manager[dev]"
+pip install -e "servers/mobile_security[dev]"
+pip install -e "servers/api_contract[dev]"
+pip install -e "servers/flutter_test_coverage[dev]"
+pip install -e "servers/flutter_performance[dev]"
+pip install -e "servers/mobile_cicd[dev]"
+pip install -e "servers/flutter_code_migration[dev]"
 pip install -e "cli[dev]"
 ```
 
 `servers.toml` maps short names to launch commands; `command = "python"` means "whichever
 interpreter the CLI itself is running under," so no PATH configuration is needed. Servers that
-need credentials (`issue_tracker`'s `GITHUB_TOKEN`) read them via `${VAR_NAME}` expansion against
-your own shell environment — the token itself never lives in the file.
+need credentials (`issue_tracker`'s and `mobile_cicd`'s `GITHUB_TOKEN`, `firebase_crashlytics`'s
+`FIREBASE_BIGQUERY_ACCESS_TOKEN`/`FIREBASE_BIGQUERY_PROJECT`) read them via `${VAR_NAME}`
+expansion against your own shell environment — the credential itself never lives in the file.
 
 ```bash
 mcp-toolkit list-servers
@@ -171,10 +270,10 @@ assuming a variable in your shell will silently show up inside a spawned server.
 
 ```bash
 cd servers/codebase_intelligence && ruff check . && mypy codebase_intelligence && pytest -q
-# ...same for sql_query, issue_tracker, dev_environment, knowledge_base, and cli
+# ...same for every other server (see servers.toml for the full list) and the cli
 ```
 
-CI runs this matrix (ruff + mypy + pytest) across all five servers and the CLI on every push.
+CI runs this matrix (ruff + mypy + pytest) across all seventeen servers and the CLI on every push.
 
 ## License
 

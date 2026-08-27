@@ -37,3 +37,84 @@ description = "Personal knowledge base over local Markdown notes"
 command = "python"
 args = ["-m", "knowledge_base.server"]
 cwd = "servers/knowledge_base"
+
+# --- Flutter / mobile servers ---
+
+[servers.flutterintel]
+description = "Navigates a Flutter codebase -- widgets, BLoC/Riverpod state, routes, repositories, dependencies"
+command = "python"
+args = ["-m", "flutter_project_intelligence.server"]
+cwd = "servers/flutter_project_intelligence"
+
+[servers.flutterui]
+description = "Drives a running Flutter app -- devices, tap/text/scroll, screenshots, integration tests"
+command = "python"
+args = ["-m", "flutter_ui_testing.server"]
+cwd = "servers/flutter_ui_testing"
+
+[servers.crashlog]
+description = "Parses Flutter/Dart stack traces and logs, correlating them with git history"
+command = "python"
+args = ["-m", "flutter_crash_analyzer.server"]
+cwd = "servers/flutter_crash_analyzer"
+
+[servers.crashlytics]
+description = "Queries Firebase Crashlytics production crash data exported to BigQuery"
+command = "python"
+args = ["-m", "firebase_crashlytics.server"]
+cwd = "servers/firebase_crashlytics"
+
+[servers.crashlytics.env]
+FIREBASE_BIGQUERY_ACCESS_TOKEN = "${FIREBASE_BIGQUERY_ACCESS_TOKEN}"
+FIREBASE_BIGQUERY_PROJECT = "${FIREBASE_BIGQUERY_PROJECT}"
+
+[servers.archguard]
+description = "Reviews a Flutter project's architecture for Clean/feature-first layering violations"
+command = "python"
+args = ["-m", "flutter_architecture_guardian.server"]
+cwd = "servers/flutter_architecture_guardian"
+
+[servers.flutterdeps]
+description = "Analyzes pubspec.yaml dependencies against pub.dev -- outdated, unused, discontinued"
+command = "python"
+args = ["-m", "flutter_dependency_manager.server"]
+cwd = "servers/flutter_dependency_manager"
+
+[servers.mobilesec]
+description = "Static security scan of a Flutter/Android/iOS project"
+command = "python"
+args = ["-m", "mobile_security.server"]
+cwd = "servers/mobile_security"
+
+[servers.apicontract]
+description = "Compares an OpenAPI spec against Flutter Dart models and API client calls"
+command = "python"
+args = ["-m", "api_contract.server"]
+cwd = "servers/api_contract"
+
+[servers.flutestcov]
+description = "Analyzes Flutter's lcov coverage report -- low coverage, uncovered lines, missing tests"
+command = "python"
+args = ["-m", "flutter_test_coverage.server"]
+cwd = "servers/flutter_test_coverage"
+
+[servers.flutperf]
+description = "Analyzes Flutter DevTools timeline exports and app-size reports for jank and bloat"
+command = "python"
+args = ["-m", "flutter_performance.server"]
+cwd = "servers/flutter_performance"
+
+[servers.mobilecicd]
+description = "Inspects GitHub Actions build status/logs and runs local Fastlane lanes"
+command = "python"
+args = ["-m", "mobile_cicd.server"]
+cwd = "servers/mobile_cicd"
+
+[servers.mobilecicd.env]
+GITHUB_TOKEN = "${GITHUB_TOKEN}"
+
+[servers.flumigrate]
+description = "Scans a Flutter project for legacy patterns and applies well-defined migrations"
+command = "python"
+args = ["-m", "flutter_code_migration.server"]
+cwd = "servers/flutter_code_migration"

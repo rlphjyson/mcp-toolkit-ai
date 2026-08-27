@@ -1,0 +1,5 @@
+import os
+
+DEFAULT_JANK_THRESHOLD_MS = float(os.environ.get("FLUTTER_PERFORMANCE_JANK_THRESHOLD_MS", "16.67"))
+
+DEFAULT_SIZE_TOP_N = int(os.environ.get("FLUTTER_PERFORMANCE_SIZE_TOP_N", "20"))

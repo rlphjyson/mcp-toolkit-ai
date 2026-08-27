@@ -23,6 +23,30 @@ jobs:
             package: dev_environment
           - dir: servers/knowledge_base
             package: knowledge_base
+          - dir: servers/flutter_project_intelligence
+            package: flutter_project_intelligence
+          - dir: servers/flutter_ui_testing
+            package: flutter_ui_testing
+          - dir: servers/flutter_crash_analyzer
+            package: flutter_crash_analyzer
+          - dir: servers/firebase_crashlytics
+            package: firebase_crashlytics
+          - dir: servers/flutter_architecture_guardian
+            package: flutter_architecture_guardian
+          - dir: servers/flutter_dependency_manager
+            package: flutter_dependency_manager
+          - dir: servers/mobile_security
+            package: mobile_security
+          - dir: servers/api_contract
+            package: api_contract
+          - dir: servers/flutter_test_coverage
+            package: flutter_test_coverage
+          - dir: servers/flutter_performance
+            package: flutter_performance
+          - dir: servers/mobile_cicd
+            package: mobile_cicd
+          - dir: servers/flutter_code_migration
+            package: flutter_code_migration
           - dir: cli
             package: mcp_toolkit
     defaults:
