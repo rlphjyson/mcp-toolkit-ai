@@ -63,8 +63,17 @@ def test_list_available_lanes_returns_empty_list_when_no_fastfile(tmp_path):
 
 
 def test_run_fastlane_lane_raises_value_error_when_fastlane_not_installed(tmp_path):
+    # Uses the `command` seam to force a FileNotFoundError deterministically -- relying on the
+    # real `fastlane` binary being absent from PATH isn't portable: GitHub's hosted ubuntu-latest
+    # runner ships fastlane preinstalled as standard mobile-CI tooling, so the plain default
+    # `["fastlane", lane]` command doesn't reliably fail there the way it does in a bare sandbox.
     with pytest.raises(ValueError, match="fastlane is not installed"):
-        run_fastlane_lane(tmp_path, "beta", timeout_seconds=10)
+        run_fastlane_lane(
+            tmp_path,
+            "beta",
+            timeout_seconds=10,
+            command=["definitely-not-a-real-fastlane-binary-xyz", "beta"],
+        )
 
 
 def test_run_fastlane_lane_raises_fastlane_timeout_error(tmp_path):
