@@ -55,9 +55,14 @@ def git_repo_fixture(tmp_path):
 @pytest.fixture(name="gateway_config")
 def gateway_config_fixture(tmp_path):
     config_file = tmp_path / "servers.toml"
+    # .as_posix(), not str(): a raw Windows path interpolated into a TOML string literal has its
+    # backslashes parsed as escape sequences (e.g. "\U" starts a Unicode escape, and the next
+    # four-plus characters of a real username/dir aren't valid hex -- a real, reproduced
+    # TOMLDecodeError on Windows). Forward slashes parse cleanly in TOML and are still a valid
+    # path on Windows.
     config_file.write_text(
         TOML_TEMPLATE.format(
-            kb_dir=KB_DIR, devenv_dir=DEVENV_DIR, gateway_dir=GATEWAY_DIR
+            kb_dir=KB_DIR.as_posix(), devenv_dir=DEVENV_DIR.as_posix(), gateway_dir=GATEWAY_DIR.as_posix()
         )
     )
     return config_file

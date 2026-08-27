@@ -60,6 +60,15 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -e ".[dev]"
+      - name: Install backend servers the gateway's e2e tests spawn for real
+        # Each matrix entry gets its own isolated environment -- unlike local dev, where every
+        # server + the gateway + the CLI share one .venv (mcp-toolkit-ai's own established
+        # convention), so a package that's merely importable via cwd (as knowledge_base is, with
+        # no dependency beyond the already-installed mcp) isn't enough for a backend with real
+        # dependencies. dev_environment's psutil import crashed exactly this way in CI, while it
+        # never surfaced locally where everything's already installed together.
+        if: matrix.dir == 'gateway'
+        run: pip install -e ../servers/knowledge_base -e ../servers/dev_environment
       - run: ruff check .
       - run: mypy ${{ matrix.package }}
       - run: pytest -q
